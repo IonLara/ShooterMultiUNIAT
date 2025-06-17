@@ -57,6 +57,9 @@ public class Jugador : NetworkBehaviour
 
     public PlayerHUD playerHUD;
 
+    [Header("Animation")]
+    public Animator animator;
+
     [Header("Body")]
     public GameObject[] noShowObjects = new GameObject[3];
 
@@ -88,7 +91,7 @@ public class Jugador : NetworkBehaviour
         {
             _rb.AddForce(Vector3.down * gravityNormal, ForceMode.Acceleration);
         }
-
+        animator.SetFloat("Velocity", horizontalVelocity.magnitude);
     }
     void Update()
     {
@@ -103,6 +106,18 @@ public class Jugador : NetworkBehaviour
     }
     #endregion
     #region PewPew
+    [SyncVar(hook =(nameof(WeaponChanged)))]
+    public WeaponData currentWeapon;
+    public GameObject[] weapons;
+
+    public void WeaponChanged(WeaponData old, WeaponData newWeapon)
+    {
+        weapons[old.index].SetActive(false);
+        weapons[newWeapon.index].SetActive(true);
+    }
+
+
+
     [Command]
     private void CommandShoot(Vector3 origen, Vector3 direccion)
     {
@@ -127,8 +142,9 @@ public class Jugador : NetworkBehaviour
     [Server]
     public bool TakeDamage(int amount, Teams elTeamo)
     {
-        if(hp <= 0 || elTeamo == myTeam) {hp = 0;return false;}
+        if(hp <= 0 || elTeamo == myTeam) {return false;}
         hp -= amount;
+        
         if (hp <= 0)
         {
             KillPlayer();
@@ -143,6 +159,11 @@ public class Jugador : NetworkBehaviour
         {
             float foo = (float)newHealth / (float)maxHp;
             playerHUD.SetHP(foo);
+            
+        }
+        if (oldHealth > newHealth)
+        {
+            animator.SetTrigger("Hit");
         }
     }
     [Server]
@@ -155,13 +176,14 @@ public class Jugador : NetworkBehaviour
     {
         if (newBool == false)
         {
-            transform.localScale = new Vector3(1, 0.3f, 1);
+            //transform.localScale = new Vector3(1, 0.3f, 1);
             transformCam.gameObject.SetActive(false);
             gameObject.GetComponent<PlayerInput>().enabled = false;
             healthBar.gameObject.SetActive(false);
             if (!isLocalPlayer) return;
             Invoke("CommandRespawn", respawnTime);
             playerHUD.gameObject.SetActive(false);
+            animator.SetBool("Death", true);
         }
         else
         {
@@ -173,6 +195,7 @@ public class Jugador : NetworkBehaviour
             transformCam.gameObject.SetActive(true);
             gameObject.GetComponent<PlayerInput>().enabled = true;
             playerHUD.gameObject.SetActive(true);
+            animator.SetBool("Death", false);
         }
 
     }
@@ -301,6 +324,11 @@ public class Jugador : NetworkBehaviour
     {
         isAlive = true;
         hp = maxHp;
+    }
+    [Server]
+    public void IncreaseHealth(int amount)
+    {
+        hp = (hp + amount) > maxHp ? maxHp : hp + amount;
     }
     [Server]
     private void CommandSetTeam()
