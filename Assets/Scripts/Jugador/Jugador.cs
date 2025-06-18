@@ -108,12 +108,21 @@ public class Jugador : NetworkBehaviour
     #region PewPew
     [SyncVar(hook =(nameof(WeaponChanged)))]
     public WeaponData currentWeapon;
+    public GameObject currentProjectile;
     public GameObject[] weapons;
+    public GameObject[] publicWeapon;
 
     public void WeaponChanged(WeaponData old, WeaponData newWeapon)
     {
-        weapons[old.index].SetActive(false);
-        weapons[newWeapon.index].SetActive(true);
+        if (isLocalPlayer)
+        {
+            weapons[old.index].SetActive(false);
+            weapons[newWeapon.index].SetActive(true);
+        }else 
+        {
+            publicWeapon[old.index].SetActive(false);
+            publicWeapon[newWeapon.index].SetActive(true);
+        }
     }
 
 
@@ -121,16 +130,25 @@ public class Jugador : NetworkBehaviour
     [Command]
     private void CommandShoot(Vector3 origen, Vector3 direccion)
     {
-        if (Physics.Raycast(origen, direccion, out RaycastHit hit, 100f))
+        if (currentWeapon.hitScan == true)
         {
-            if (hit.collider.gameObject.TryGetComponent<Jugador>(out Jugador elGolpeado) == true)
+            if (Physics.Raycast(origen, direccion, out RaycastHit hit, 100f))
             {
-                if (elGolpeado.TakeDamage(1, myTeam))
+                if (hit.collider.gameObject.TryGetComponent<Jugador>(out Jugador elGolpeado) == true)
                 {
-                    kills ++;
+                    if (elGolpeado.TakeDamage(1, myTeam))
+                    {
+                        kills++;
+                    }
                 }
             }
         }
+        else
+        {
+            GameObject bullet = Instantiate(currentProjectile, origen, Quaternion.LookRotation(direccion));
+            bullet.GetComponent<Rigidbody>().AddForce(bullet.transform.forward * 20, ForceMode.Impulse);
+        }
+
     }
 
     private void OnKillChanged(int oldKills, int newKills)
