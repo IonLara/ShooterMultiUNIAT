@@ -112,6 +112,8 @@ public class Jugador : NetworkBehaviour
     public GameObject[] weapons;
     public GameObject[] publicWeapon;
 
+    public GameObject particles;
+
     public void WeaponChanged(WeaponData old, WeaponData newWeapon)
     {
         if (isLocalPlayer)
@@ -125,15 +127,21 @@ public class Jugador : NetworkBehaviour
         }
     }
 
-
+    [ClientRpc]
+    private void RPCSpawnParticle(Vector3 point, Vector3 direction)
+    {
+        Instantiate(particles, point, Quaternion.LookRotation(direction));
+    }
 
     [Command]
     private void CommandShoot(Vector3 origen, Vector3 direccion)
     {
+        RPCSpawnParticle(origen, direccion);
         if (currentWeapon.hitScan == true)
         {
             if (Physics.Raycast(origen, direccion, out RaycastHit hit, 100f))
             {
+                RPCSpawnParticle(hit.point, direccion * -1);
                 if (hit.collider.gameObject.TryGetComponent<Jugador>(out Jugador elGolpeado) == true)
                 {
                     if (elGolpeado.TakeDamage(1, myTeam))
@@ -146,7 +154,8 @@ public class Jugador : NetworkBehaviour
         else
         {
             GameObject bullet = Instantiate(currentProjectile, origen, Quaternion.LookRotation(direccion));
-            bullet.GetComponent<Rigidbody>().AddForce(bullet.transform.forward * 20, ForceMode.Impulse);
+            bullet.GetComponent<ABullet>().Initialize(this, myTeam);
+            NetworkServer.Spawn(bullet);
         }
 
     }

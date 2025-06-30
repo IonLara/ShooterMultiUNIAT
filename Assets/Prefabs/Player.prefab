@@ -1347,7 +1347,7 @@ MonoBehaviour:
     usesAmmo: 0
     ammo: 0
     index: 0
-    hitScan: 0
+    hitScan: 1
     damage: 1
   currentProjectile: {fileID: 0}
   weapons:
@@ -1356,6 +1356,7 @@ MonoBehaviour:
   publicWeapon:
   - {fileID: 505976611172963230}
   - {fileID: 6556835620240489209}
+  particles: {fileID: 8292583345314806587, guid: d398d44d6b2917949b267c43b1f0fe2e, type: 3}
 --- !u!114 &4878399599982051062
 MonoBehaviour:
   m_ObjectHideFlags: 0

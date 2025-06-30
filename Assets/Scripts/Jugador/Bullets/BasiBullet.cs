@@ -14,6 +14,7 @@ public class BasiBullet : ABullet
     {
         if (col.collider.gameObject.TryGetComponent(out Jugador playa))
         {
+
             playa.TakeDamage(damage, team);
         }
         base.HasHit(col);
